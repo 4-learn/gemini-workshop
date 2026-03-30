@@ -1,5 +1,5 @@
 """
-報告 Agent（模擬 Claude）
+報告 Agent（模擬 Gemini）
 
 啟動：uvicorn report_server:app --port 8002
 """
@@ -12,11 +12,11 @@ app = FastAPI()
 @app.get("/.well-known/agent.json")
 async def agent_card():
     return {
-        "name": "報告 Agent (Claude)",
+        "name": "報告 Agent (Gemini)",
         "description": "根據違規和法規生成專業告警報告",
         "url": "http://localhost:8002",
         "capabilities": ["generate_report"],
-        "model": "claude-sonnet",
+        "model": "gemini-2.5-flash",
     }
 
 @app.post("/task")
@@ -47,5 +47,5 @@ async def handle_task(task: dict):
     return {
         "task_id": task.get("task_id", ""),
         "status": "completed",
-        "output": {"report": report, "severity": severity, "model_used": "claude-sonnet"},
+        "output": {"report": report, "severity": severity, "model_used": "gemini-2.5-flash"},
     }

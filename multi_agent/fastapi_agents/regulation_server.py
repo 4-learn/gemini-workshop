@@ -1,5 +1,5 @@
 """
-法規 Agent（模擬 Qwen）
+法規 Agent（模擬 OpenAI）
 
 啟動：uvicorn regulation_server:app --port 8001
 """
@@ -24,11 +24,11 @@ REGULATIONS = {
 @app.get("/.well-known/agent.json")
 async def agent_card():
     return {
-        "name": "法規查詢 Agent (Qwen)",
+        "name": "法規查詢 Agent (OpenAI)",
         "description": "用 RAG 搜尋台灣工安法規",
         "url": "http://localhost:8001",
         "capabilities": ["regulation_search"],
-        "model": "qwen-2.5",
+        "model": "gpt-4o-mini",
     }
 
 @app.post("/task")
@@ -39,7 +39,7 @@ async def handle_task(task: dict):
         "source": "N/A",
         "penalty": "N/A",
     })
-    reg["model_used"] = "qwen-2.5"
+    reg["model_used"] = "gpt-4o-mini"
     return {
         "task_id": task.get("task_id", ""),
         "status": "completed",

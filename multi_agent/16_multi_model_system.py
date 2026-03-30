@@ -84,7 +84,7 @@ class DetectionAgent:
         return task
 
 
-# === 法規 Agent（模擬 Qwen：中文 RAG） ===
+# === 法規 Agent（模擬 OpenAI：中文 RAG） ===
 
 class RegulationAgent:
     card = AgentCard(
@@ -92,7 +92,7 @@ class RegulationAgent:
         description="用 RAG 搜尋台灣工安法規",
         url="http://localhost:8001",
         capabilities=["regulation_search"],
-        model="Qwen（中文理解好、成本低）",
+        model="OpenAI（文字任務穩定、便宜）",
     )
 
     REGULATIONS = {
@@ -120,12 +120,12 @@ class RegulationAgent:
             "source": "N/A",
             "penalty": "N/A",
         })
-        reg["model_used"] = "qwen-2.5"
+        reg["model_used"] = "gpt-4o-mini"
         task.complete(reg)
         return task
 
 
-# === 報告 Agent（模擬 Claude：文筆好） ===
+# === 報告 Agent（模擬 Gemini：文筆好） ===
 
 class ReportAgent:
     card = AgentCard(
@@ -133,7 +133,7 @@ class ReportAgent:
         description="根據違規和法規生成專業告警報告",
         url="http://localhost:8002",
         capabilities=["generate_report"],
-        model="Claude（文筆好、精準）",
+        model="Gemini（多模態強）",
     )
 
     def handle_task(self, task):
@@ -163,7 +163,7 @@ class ReportAgent:
         task.complete({
             "report": report,
             "severity": severity,
-            "model_used": "claude-sonnet",
+            "model_used": "gemini-2.5-flash",
         })
         return task
 
@@ -231,9 +231,9 @@ def main():
     detection.handle_task(task1)
     print(f"  {task1.task_id}: {json.dumps(task1.output, ensure_ascii=False)}")
 
-    # 3. 查法規（Qwen）
+    # 3. 查法規（OpenAI）
     print(f"\n{'─' * 60}")
-    print(f"  Step 2: 法規 Agent (Qwen)")
+    print(f"  Step 2: 法規 Agent (OpenAI)")
     print(f"{'─' * 60}")
 
     for violation in task1.output["violations"]:
@@ -242,9 +242,9 @@ def main():
         print(f"  {task2.task_id}: {task2.output['regulation'][:50]}...")
         print(f"    罰則: {task2.output['penalty']}")
 
-    # 4. 生成報告（Claude）
+    # 4. 生成報告（Gemini）
     print(f"\n{'─' * 60}")
-    print(f"  Step 3: 報告 Agent (Claude)")
+    print(f"  Step 3: 報告 Agent (Gemini)")
     print(f"{'─' * 60}")
 
     task3 = Task("generate_report", {
@@ -276,8 +276,8 @@ def main():
     print(f"\n  Agent 分工：")
     models = {
         "偵測": ("Gemini", "多模態看圖", "免費/低"),
-        "法規": ("Qwen", "中文 RAG", "低"),
-        "報告": ("Claude", "專業文筆", "中"),
+        "法規": ("OpenAI", "中文 RAG", "低"),
+        "報告": ("Gemini", "報告生成", "中"),
         "通知": ("GPT-4o-mini", "快速判斷", "極低"),
     }
 

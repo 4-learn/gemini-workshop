@@ -64,9 +64,9 @@ def main():
     ).json()
     print(f"  違規: {detection['violations']}")
 
-    # 3. 查法規（Qwen）
+    # 3. 查法規（OpenAI）
     print(f"\n{'─' * 60}")
-    print(f"  Step 2: 法規 Agent (Qwen)")
+    print(f"  Step 2: 法規 Agent (OpenAI)")
     print(f"{'─' * 60}")
 
     violation = detection["violations"][0]
@@ -75,9 +75,9 @@ def main():
     print(f"  法規: {regulation['output']['regulation'][:50]}...")
     print(f"  罰則: {regulation['output']['penalty']}")
 
-    # 4. 報告（Claude）
+    # 4. 報告（Gemini）
     print(f"\n{'─' * 60}")
-    print(f"  Step 3: 報告 Agent (Claude)")
+    print(f"  Step 3: 報告 Agent (Gemini)")
     print(f"{'─' * 60}")
 
     task = create_task("generate_report", {
@@ -96,8 +96,8 @@ def main():
     print(f"  {'任務':>8} {'模型':>15} {'Port':>8}")
     print(f"  {'─' * 35}")
     print(f"  {'偵測':>8} {'Gemini':>15} {'8000':>8}")
-    print(f"  {'法規':>8} {'Qwen':>15} {'8001':>8}")
-    print(f"  {'報告':>8} {'Claude':>15} {'8002':>8}")
+    print(f"  {'法規':>8} {'OpenAI':>15} {'8001':>8}")
+    print(f"  {'報告':>8} {'Gemini':>15} {'8002':>8}")
 
 
 if __name__ == "__main__":
