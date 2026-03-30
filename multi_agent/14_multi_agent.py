@@ -52,7 +52,7 @@ class Agent:
 
 
 if __name__ == "__main__":
-    use_mock = "--mock" in sys.argv
+    use_mock = "--mock" in sys.argv or not os.getenv("GOOGLE_API_KEY")
 
     print("=" * 55)
     print("  Multi-Agent：3 個 Agent 協作")
