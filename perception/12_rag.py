@@ -51,10 +51,10 @@ def get_embeddings(texts, mock=False):
             vectors.append(vec.tolist())
         return vectors
 
-    import google.generativeai as genai
-    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-    result = genai.embed_content(model="models/text-embedding-004", content=texts)
-    return result["embedding"]
+    from google import genai
+    client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+    result = client.models.embed_content(model="gemini-embedding-001", contents=texts)
+    return [e.values for e in result.embeddings]
 
 
 def cosine_similarity(a, b):
@@ -114,11 +114,11 @@ def main():
         if use_mock:
             answer = f"根據{results[0][0]['title']}，{results[0][0]['content'][:60]}..."
         else:
-            import google.generativeai as genai
-            genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-            model = genai.GenerativeModel("gemini-2.5-flash")
+            from google import genai
+            client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+            
             prompt = f"根據以下法規回答問題，只用提供的內容回答。\n\n法規：\n{context}\n\n問題：{question}"
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
             answer = response.text
 
         print(f"   回答：{answer}")

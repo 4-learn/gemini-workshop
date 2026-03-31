@@ -51,10 +51,10 @@ def get_embeddings(texts, mock=False):
             vectors.append(vec.tolist())
         return vectors
 
-    import google.generativeai as genai
-    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-    result = genai.embed_content(model="models/text-embedding-004", content=texts)
-    return result["embedding"]
+    from google import genai
+    client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+    result = client.models.embed_content(model="gemini-embedding-001", contents=texts)
+    return [e.values for e in result.embeddings]
 
 
 def cosine_similarity(a, b):
@@ -106,9 +106,9 @@ def main():
 
         reranked = sorted(top5, key=lambda x: -relevance(x[0]))
     else:
-        import google.generativeai as genai
-        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        from google import genai
+        client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+        
 
         candidate_text = ""
         for i, (chunk, _) in enumerate(top5):
@@ -122,7 +122,7 @@ def main():
 {candidate_text}
 排序："""
 
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
         try:
             order = [int(x.strip()) - 1 for x in response.text.strip().split(",")]
             reranked = [(top5[i][0], round(1.0 - j * 0.15, 2)) for j, i in enumerate(order) if i < len(top5)]
