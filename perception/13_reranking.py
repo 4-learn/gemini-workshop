@@ -54,7 +54,7 @@ def main():
     chunk_texts = [c["content"] for c in CHUNKS]
     chunk_embeddings = get_embeddings(chunk_texts)
 
-    question = "在高處工作需要什麼安全裝備？"
+    question = "工人在屋頂施工掉下來，違反什麼法規？"
     print(f"問題：{question}\n")
 
     # === 題目 1：向量搜尋（粗搜 top 5） ===
