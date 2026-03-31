@@ -5,16 +5,21 @@ Workshop 解答：RAG（Retrieval-Augmented Generation）
 
 執行方式：
   python 12_rag.py
-  python 12_rag.py --mock
+
+需要：
+  pip install google-genai scikit-learn python-dotenv numpy
+  .env 裡設定 GOOGLE_API_KEY
 """
 
-import json
 import os
-import sys
 import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 from dotenv import load_dotenv
+from google import genai
 
 load_dotenv()
+
+client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
 # 法規資料
 CHUNKS = [
@@ -37,105 +42,59 @@ CHUNKS = [
 ]
 
 
-def get_embeddings(texts, mock=False):
-    if mock:
-        keywords = ["安全帽", "反光", "護目鏡", "出口", "高空", "化學", "噪音", "消防", "帽", "背心", "焊接", "作業"]
-        vectors = []
-        for text in texts:
-            vec = [1.0 if kw in text else 0.0 for kw in keywords]
-            np.random.seed(hash(text) % 2**31)
-            vec = np.array(vec) + np.random.normal(0, 0.1, len(keywords))
-            norm = np.linalg.norm(vec)
-            if norm > 0:
-                vec = vec / norm
-            vectors.append(vec.tolist())
-        return vectors
-
-    from google import genai
-    client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+def get_embeddings(texts):
     result = client.models.embed_content(model="gemini-embedding-001", contents=texts)
     return [e.values for e in result.embeddings]
 
 
-def cosine_similarity(a, b):
-    a, b = np.array(a), np.array(b)
-    return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-8))
-
-
 def main():
-    use_mock = "--mock" in sys.argv
-
     print("=== RAG Workshop ===\n")
 
     # === 題目 1：建立 embedding ===
-
     print("1. 建立法規 embedding")
     print("-" * 50)
 
     chunk_texts = [c["content"] for c in CHUNKS]
-    chunk_embeddings = get_embeddings(chunk_texts, mock=use_mock)
+    chunk_embeddings = get_embeddings(chunk_texts)
     print(f"   {len(CHUNKS)} 段法規，向量維度: {len(chunk_embeddings[0])}")
 
-    # === 題目 2：實作向量搜尋 ===
-
-    print("\n2. 實作向量搜尋")
+    # === 題目 2：向量搜尋 ===
+    print("\n2. 向量搜尋")
     print("-" * 50)
 
     def search(query, top_k=3):
-        query_emb = get_embeddings([query], mock=use_mock)[0]
-        scores = []
-        for i, emb in enumerate(chunk_embeddings):
-            score = cosine_similarity(query_emb, emb)
-            scores.append((score, i))
-        scores.sort(reverse=True)
-        return [(CHUNKS[idx], round(sc, 4)) for sc, idx in scores[:top_k]]
+        query_emb = get_embeddings([query])[0]
+        sims = cosine_similarity([query_emb], chunk_embeddings)[0]
+        sorted_idx = sims.argsort()[::-1][:top_k]
+        return [(CHUNKS[i], round(float(sims[i]), 4)) for i in sorted_idx]
 
     test = search("安全帽有什麼規定？")
     for chunk, score in test:
         print(f"   [{score}] {chunk['title']}")
 
-    # === 題目 3：組合 RAG pipeline ===
-
+    # === 題目 3：RAG pipeline ===
     print("\n3. RAG Pipeline")
     print("-" * 50)
 
     def rag_answer(question):
-        # 搜尋
         results = search(question, top_k=3)
         print(f"\n   問題：{question}")
         print(f"   搜尋結果：")
         for chunk, score in results:
             print(f"     [{score}] {chunk['title']}")
 
-        # 組 context
         context = "\n\n".join([f"【{c['title']}】\n{c['content']}" for c, _ in results])
+        prompt = f"根據以下法規回答問題，只用提供的內容回答。\n\n法規：\n{context}\n\n問題：{question}"
+        response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
 
-        # 生成
-        if use_mock:
-            answer = f"根據{results[0][0]['title']}，{results[0][0]['content'][:60]}..."
-        else:
-            from google import genai
-            client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
-            
-            prompt = f"根據以下法規回答問題，只用提供的內容回答。\n\n法規：\n{context}\n\n問題：{question}"
-            response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
-            answer = response.text
+        print(f"   回答：{response.text}")
+        return response.text
 
-        print(f"   回答：{answer}")
-        return answer
-
-    # === 題目 4：測試 3 個問題 ===
-
+    # === 題目 4：測試 ===
     print("\n4. 測試")
     print("-" * 50)
 
-    questions = [
-        "安全帽有什麼規定？",
-        "高空作業需要什麼防護？",
-        "噪音太大怎麼辦？",
-    ]
-
-    for q in questions:
+    for q in ["安全帽有什麼規定？", "高空作業需要什麼防護？", "噪音太大怎麼辦？"]:
         rag_answer(q)
 
     print("\n=== 完成 ===")
